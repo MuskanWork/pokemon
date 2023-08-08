@@ -1,8 +1,7 @@
 "use client";
-
 import React, { useEffect, useState } from "react";
 import {
-  fetchUserData,
+  fetchPokemonData,
 } from "./ReduxToolkit/Feature/PokemonSlice";
 import { useAppDispatch, useAppSelector } from "./ReduxToolkit/hooks";
 
@@ -13,17 +12,44 @@ import LoaderImg from "../../public/loader.gif"
 import './styles/common.css'
 import { NotFound } from "./Component/NotFound";
 
+type pokemonList = {
+  id: string,
+  url: string,
+  name: string
+}
+
+type state = {
+  pokemonReducer: {
+    loading: boolean;
+    pokemonList: never[];
+    error: null;
+    totalPage: number;
+    pokemonData: {};
+    pokemonDetails: {
+      id: string;
+      height: string;
+      name: string;
+      weight: string;
+      base_experience: string;
+      abilities: never[];
+      types: never[];
+    };
+    detailsLoading: boolean;
+    detailserror: null;
+    currentPage: number;
+  };
+}
+
 export default function Home() {
-  const { pokemonList, error, loading, totalPage } = useAppSelector((state) => state.pokemonReducer);
+  const { pokemonList, error, loading, totalPage, currentPage } = useAppSelector((state: state) => state.pokemonReducer);
   const dispatch = useAppDispatch();
-  const [search, setSearch] = useState('');
-  const [page, setPage] = useState(0);
+  const [search, setSearch] = useState<string>('');
   const offset = 12;
-  const fileteredPokemons = pokemonList.filter(pokemon => pokemon.name && (pokemon.name?.toLowerCase().includes(search && search.toLowerCase()) || pokemon.id?.toLowerCase().includes(search && search.toLowerCase()) || ''));
+  const fileteredPokemons = pokemonList.filter((pokemon: pokemonList) => pokemon.name && (pokemon.name?.toLowerCase().includes(search && search.toLowerCase()) || pokemon.id?.toLowerCase().includes(search && search.toLowerCase()) || ''));
 
   useEffect(() => {
-    dispatch(fetchUserData({ page, offset }))
-  }, [page])
+    dispatch(fetchPokemonData({ page: currentPage, offset }))
+  }, [currentPage])
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
     setSearch(e.target.value);
@@ -43,7 +69,7 @@ export default function Home() {
 
       {
         loading ?
-          <div className="loaderWrapper">
+          <div className="loader">
             <img alt="pokemon" src={LoaderImg.src} />
           </div>
           :
@@ -51,10 +77,10 @@ export default function Home() {
             {search === '' || fileteredPokemons.length > 0 ?
               <>
                 <CardList pokemons={fileteredPokemons}></CardList>
-                <Pagination setPage={setPage} page={page} totalPage={totalPage} />
+                <Pagination page={currentPage} totalPage={totalPage} />
               </>
               :
-              <NotFound />
+              <NotFound pokemon={true} />
             }
             {
               error &&
